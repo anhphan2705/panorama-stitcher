@@ -131,6 +131,8 @@ def expand_from_crop_image(image, crop_location):
         return (None, None)
 
 def remove_black_outline(image):
+    # Crop a threshold mask of the image inward proportionally until all the black pixel are removed
+    # Get the dimension of the mask and crop the original image
     print("[Console] Cropping Image")
     mask = get_mask_image(image)
     # Cropping image
@@ -160,5 +162,3 @@ write_image("./output/stitched_img.jpg", stitched_image)
 show_image("Stitch", stitched_image)
 if cropped_image is not None: write_image("./output/cropped_img.jpg", cropped_image), show_image("Crop", cropped_image)
 if expanded_img is not None: write_image("./output/expanded_img.jpg", expanded_img), show_image("Expand", expanded_img)
-
-
