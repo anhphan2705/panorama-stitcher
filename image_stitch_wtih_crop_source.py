@@ -123,10 +123,13 @@ def expand_from_crop_image(image, crop_location):
         if is_black_hor_line(mask_img, w_left, w_right, h): 
             h_upper = h-5
             break
-    print("[Console] Salvaging usable image portion success")
-    return (h_lower, h_upper, w_left, w_right), image[h_lower:h_upper, w_left:w_right]
+    if crop_location is not (h_lower, h_upper, w_left, w_right):
+        print("[Console] Salvaging usable image portion success")
+        return (h_lower, h_upper, w_left, w_right), image[h_lower:h_upper, w_left:w_right]
+    else:
+        print("[Console] Salvage failed")
+        return (None, None)
 
-    
 def remove_black_outline(image):
     print("[Console] Cropping Image")
     mask = get_mask_image(image)
@@ -153,9 +156,9 @@ stitched_image = get_stitch_image(images)
 crop_location, cropped_image = remove_black_outline(stitched_image)
 expand_location, expanded_img = expand_from_crop_image(stitched_image, crop_location)
 # Output
-show_image("Product", expanded_img)
 write_image("./output/stitched_img.jpg", stitched_image)
-write_image("./output/cropped_img.jpg", cropped_image)
-write_image("./output/expanded_img.jpg", expanded_img)
+show_image("Stitch", stitched_image)
+if cropped_image is not None: write_image("./output/cropped_img.jpg", cropped_image), show_image("Crop", cropped_image)
+if expanded_img is not None: write_image("./output/expanded_img.jpg", expanded_img), show_image("Expand", expanded_img)
 
 
