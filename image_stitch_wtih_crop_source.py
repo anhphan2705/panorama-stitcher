@@ -106,24 +106,28 @@ def expand_from_crop_image(image, cropped_image, crop_location):
     mask_img = get_mask_image(image)
     # Left side (h, 0)
     for w in range(w_left, -1, -1):
-        if not is_black_ver_line(mask_img, h_lower, h_upper, w): 
+        if is_black_ver_line(mask_img, h_lower, h_upper, w):
+            w_left = w-1
+            print("w1", w)
             break
-        w_left = w
     # Right side (h, w)
     for w in range(w_right, width):
-        if not is_black_ver_line(mask_img, h_lower, h_upper, w): 
+        if is_black_ver_line(mask_img, h_lower, h_upper, w): 
+            w_right = w-1
+            print("w2", w)
             break
-        w_right = w
     # Lower side (0, w)
     for h in range(h_lower, -1, -1):
         if is_black_hor_line(mask_img, w_left, w_right, h): 
+            h_lower = h-1
+            print("h1", h)
             break
-        h_lower = h
     # Upper side (w, 0)
     for h in range(h_upper, height):
-        if not is_black_hor_line(mask_img, w_left, w_right, h): 
+        if is_black_hor_line(mask_img, w_left, w_right, h): 
+            h_upper = h-1
+            print("h2", h)
             break
-        h_upper = h
     print(h_lower, h_upper, w_left, w_right)
     return (h_lower, h_upper, w_left, w_right), image[h_lower:h_upper, w_left:w_right]
 
@@ -140,8 +144,6 @@ def remove_black_outline(image):
             print(f"[CONSOLE] Crop image with factor of {crop_factor}")
             is_cropped = True
             break
-    # Salvage usuable cropped portion
-    
     # Showing result
     if is_cropped:
         print("[CONSOLE] Crop successfully")
@@ -151,7 +153,7 @@ def remove_black_outline(image):
         return None
 
 # Main
-images = get_images("./images/mountain/*.jpg")
+images = get_images("./images/real/*.jpg")
 stitched_image = get_stitch_image(images)
 crop_location, cropped_image = remove_black_outline(stitched_image)
 expand_location, expanded_img = expand_from_crop_image(stitched_image, cropped_image, crop_location)
