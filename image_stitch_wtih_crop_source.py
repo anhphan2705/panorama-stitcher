@@ -60,34 +60,73 @@ def crop_image(image, factor):
     (h, w) = get_image_2D_dim(image)
     # Crop horizontally (width)
     amount_crop = w * (1-factor)
-    w_upper = int(w - amount_crop//2)
-    w_lower = int(amount_crop//2)
+    w_right = int(w - amount_crop//2)
+    w_left = int(amount_crop//2)
     # Crop vertically (height)
     amount_crop = h * (1-factor)
     h_upper = int(h - amount_crop//2)
     h_lower = int(amount_crop//2)
-    return (h_lower, h_upper, w_lower, w_upper), image[h_lower:h_upper, w_lower:w_upper]
+    return (h_lower, h_upper, w_left, w_right), image[h_lower:h_upper, w_left:w_right]
 
+def is_black_ver_line(image, start_h, end_h, w):
+    # Check if there is a black pixel in a straight vertical line
+    for value in range(start_h, end_h):
+        if all(image[value, w] == [0, 0, 0]):
+            return True
+    return False
+
+def is_black_hor_line(image, start_w, end_w, h):
+    # Check if there is a black pixel in a straight horizontal line
+    for value in range(start_w, end_w):
+        if all(image[h, value] == [0, 0, 0]):
+            return True
+    return False
+        
 def is_black_pixel_outline(threshold_image):
     # Find if there is black pixel on 4 sides
     (height, width) = get_image_2D_dim(threshold_image)
     # Lower side (0, w)
-    for w in range(0, width):
-        if all(threshold_image[0, w] == [0, 0]):
-            return True
+    if is_black_hor_line(threshold_image, 0, width, 0): return True
     # Upper side (h, w)
-    for w in range(0, width):
-        if all(threshold_image[height-1, w] == [0, 0]):
-            return True
+    if is_black_hor_line(threshold_image, 0, width, height-1): return True
     # Left side (h, 0)
-    for h in range(0, height):
-        if all(threshold_image[h, 0] == [0, 0]):
-            return True
+    if is_black_ver_line(threshold_image, 0, height, 0): return True
     # Right side (h, w)
-    for h in range(0, height):
-        if all(threshold_image[h, width-1] == [0, 0]):
-            return True
+    if is_black_ver_line(threshold_image, 0, height, width-1): return True
     return False
+
+def expand_from_crop_image(image, cropped_image, crop_location):
+    # Assuming it is proportionally cropped, expand each side until it hit a black pixel
+    # This will get the most image info in the expense of original image ratio
+    print("[CONSOLE] Salvaging usable cropped portions")
+    height, width = get_image_2D_dim(cropped_image)
+    print(get_image_2D_dim(cropped_image))
+    h_lower, h_upper, w_left, w_right = crop_location
+    print(crop_location)
+    mask_img = get_mask_image(image)
+    # Left side (h, 0)
+    for w in range(w_left, -1, -1):
+        if not is_black_ver_line(mask_img, h_lower, h_upper, w): 
+            break
+        w_left = w
+    # Right side (h, w)
+    for w in range(w_right, width):
+        if not is_black_ver_line(mask_img, h_lower, h_upper, w): 
+            break
+        w_right = w
+    # Lower side (0, w)
+    for h in range(h_lower, -1, -1):
+        if is_black_hor_line(mask_img, w_left, w_right, h): 
+            break
+        h_lower = h
+    # Upper side (w, 0)
+    for h in range(h_upper, height):
+        if not is_black_hor_line(mask_img, w_left, w_right, h): 
+            break
+        h_upper = h
+    print(h_lower, h_upper, w_left, w_right)
+    return (h_lower, h_upper, w_left, w_right), image[h_lower:h_upper, w_left:w_right]
+
     
 def remove_black_outline(image):
     print("[CONSOLE] Cropping Image")
@@ -98,9 +137,11 @@ def remove_black_outline(image):
         crop_factor = 0.01 * crop_factor
         trial_mask = crop_image(mask, crop_factor)[1]
         if not is_black_pixel_outline(trial_mask):
+            print(f"[CONSOLE] Crop image with factor of {crop_factor}")
             is_cropped = True
-            print("Cropped")
             break
+    # Salvage usuable cropped portion
+    
     # Showing result
     if is_cropped:
         print("[CONSOLE] Crop successfully")
@@ -110,12 +151,15 @@ def remove_black_outline(image):
         return None
 
 # Main
-images = get_images("./images/real/*.jpg")
+images = get_images("./images/mountain/*.jpg")
 stitched_image = get_stitch_image(images)
 crop_location, cropped_image = remove_black_outline(stitched_image)
+expand_location, expanded_img = expand_from_crop_image(stitched_image, cropped_image, crop_location)
 # Output
-show_image("Product", cropped_image)
+print(get_image_2D_dim(expanded_img))
+show_image("Product", expanded_img)
 write_image("./output/stitched_img.jpg", stitched_image)
 write_image("./output/cropped_img.jpg", cropped_image)
+write_image("./output/expanded_img.jpg", expanded_img)
 
 
