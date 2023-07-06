@@ -2,53 +2,53 @@ import cv2
 import glob
 
 def show_image(header, image):
-    print("[CONSOLE] Showing image")
+    print("[Console] Showing image")
     cv2.imshow(header, image)
     cv2.waitKey()
     
 def write_image(directory, image):
-    print("[CONSOLE] Saving image")
+    print("[Console] Saving image")
     cv2.imwrite(directory, image)
 
 def get_images(directory):
-    print("[CONSOLE] Accessing folder")
+    print("[Console] Accessing folder")
     image_paths = glob.glob(directory)
     print(image_paths)
     if len(image_paths) == 0:
-        raise Exception("[CONSOLE] Invalid directory")
+        raise Exception("[Console] Invalid directory")
     images = []
     # Add image to memory
-    print("[CONSOLE] Loading Images")
+    print("[Console] Loading Images")
     for image_path in image_paths:
         image = cv2.imread(image_path)
         images.append(image)
-    print(f"[CONSOLE] Loaded {len(images)} image(s)")
+    print(f"[Console] Loaded {len(images)} image(s)")
     return images
 
 def get_gray_image(image):
     return cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
 def get_stitch_image(image_list):
-    print("[CONSOLE] Stitching Images")
+    print("[Console] Stitching Images")
     # Stitch
     stitcher = cv2.Stitcher.create()
     stitch_status, stitched_image = stitcher.stitch(image_list)
     # Output
     if stitch_status == 0:
-        print("[CONSOLE] Stitch successfully")
+        print("[Console] Stitch successfully")
         return stitched_image
     else:
         raise Exception("[Console] Stitch failed")
     
 def get_threshold_image(gray_image):
-    print("[CONSOLE] Thresholding image")
+    print("[Console] Thresholding image")
     return cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY)[1]
 
 def get_image_2D_dim(image):
     return image.shape[:2]
 
 def get_mask_image(image):
-    print("[CONSOLE] Masking image")
+    print("[Console] Masking image")
     gray_image = get_gray_image(image)
     # Threshold + Blur + Threshold = Remove all the random black pixel in the white part of the first threshold
     threshold_image = get_threshold_image(gray_image)
@@ -95,45 +95,40 @@ def is_black_pixel_outline(threshold_image):
     if is_black_ver_line(threshold_image, 0, height, width-1): return True
     return False
 
-def expand_from_crop_image(image, cropped_image, crop_location):
+def expand_from_crop_image(image, crop_location):
     # Assuming it is proportionally cropped, expand each side until it hit a black pixel
     # This will get the most image info in the expense of original image ratio
-    print("[CONSOLE] Salvaging usable cropped portions")
-    height, width = get_image_2D_dim(cropped_image)
-    print(get_image_2D_dim(cropped_image))
+    # w +- 5 instead of 1 for any error margin it may have
+    print("[Console] Salvaging usable cropped portions")
+    height, width = get_image_2D_dim(image)
     h_lower, h_upper, w_left, w_right = crop_location
-    print(crop_location)
     mask_img = get_mask_image(image)
     # Left side (h, 0)
     for w in range(w_left, -1, -1):
         if is_black_ver_line(mask_img, h_lower, h_upper, w):
-            w_left = w-1
-            print("w1", w)
+            w_left = w+5
             break
     # Right side (h, w)
     for w in range(w_right, width):
         if is_black_ver_line(mask_img, h_lower, h_upper, w): 
-            w_right = w-1
-            print("w2", w)
+            w_right = w-5
             break
     # Lower side (0, w)
     for h in range(h_lower, -1, -1):
         if is_black_hor_line(mask_img, w_left, w_right, h): 
-            h_lower = h-1
-            print("h1", h)
+            h_lower = h+5
             break
     # Upper side (w, 0)
     for h in range(h_upper, height):
         if is_black_hor_line(mask_img, w_left, w_right, h): 
-            h_upper = h-1
-            print("h2", h)
+            h_upper = h-5
             break
-    print(h_lower, h_upper, w_left, w_right)
+    print("[Console] Salvaging usable image portion success")
     return (h_lower, h_upper, w_left, w_right), image[h_lower:h_upper, w_left:w_right]
 
     
 def remove_black_outline(image):
-    print("[CONSOLE] Cropping Image")
+    print("[Console] Cropping Image")
     mask = get_mask_image(image)
     # Cropping image
     is_cropped = False
@@ -141,24 +136,23 @@ def remove_black_outline(image):
         crop_factor = 0.01 * crop_factor
         trial_mask = crop_image(mask, crop_factor)[1]
         if not is_black_pixel_outline(trial_mask):
-            print(f"[CONSOLE] Crop image with factor of {crop_factor}")
+            print(f"[Console] Crop image with factor of {crop_factor}")
             is_cropped = True
             break
     # Showing result
     if is_cropped:
-        print("[CONSOLE] Crop successfully")
+        print("[Console] Crop successfully")
         return crop_image(image, crop_factor)
     else:
-        print("[CONSOLE] Image is not suitable to be cropped")
+        print("[Console] Image is not suitable to be cropped")
         return None
 
 # Main
 images = get_images("./images/real/*.jpg")
 stitched_image = get_stitch_image(images)
 crop_location, cropped_image = remove_black_outline(stitched_image)
-expand_location, expanded_img = expand_from_crop_image(stitched_image, cropped_image, crop_location)
+expand_location, expanded_img = expand_from_crop_image(stitched_image, crop_location)
 # Output
-print(get_image_2D_dim(expanded_img))
 show_image("Product", expanded_img)
 write_image("./output/stitched_img.jpg", stitched_image)
 write_image("./output/cropped_img.jpg", cropped_image)
