@@ -34,7 +34,10 @@ def convert_arr_to_byte(arr_image):
     """
     arr_image_cvt = cv2.cvtColor(arr_image, cv2.COLOR_RGB2BGR)
     success, byte_image = cv2.imencode(".jpg", arr_image_cvt)
-    return byte_image.tobytes()
+    if success:
+        return byte_image.tobytes()
+    else:
+        raise Exception("Cannot convert array image to byte image")
 
 
 def show_image(header, image):
