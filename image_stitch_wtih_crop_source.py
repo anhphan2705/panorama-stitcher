@@ -1,5 +1,6 @@
 import cv2
 import glob
+import time
 
 def show_image(header, image):
     """
@@ -41,14 +42,14 @@ def get_images(directory):
     image_paths = glob.glob(directory)
     print(image_paths)
     if len(image_paths) == 0:
-        raise Exception("[Console] Invalid directory")
+        raise Exception("[INFO] Invalid directory")
     images = []
     # Add images to memory
     print("[Console] Loading Images")
     for image_path in image_paths:
         image = cv2.imread(image_path)
         images.append(image)
-    print(f"[Console] Loaded {len(images)} image(s)")
+    print(f"[INFO] Loaded {len(images)} image(s)")
     return images
 
 def get_gray_image(image):
@@ -78,14 +79,16 @@ def get_stitch_image(image_list):
     """
     print("[Console] Stitching Images")
     # Stitch images
+    since = time.time()
     stitcher = cv2.Stitcher.create()
     stitch_status, stitched_image = stitcher.stitch(image_list)
+    elapsed = time.time() - since
     # Check stitching status
     if stitch_status == 0:
-        print("[Console] Stitch successful")
+        print(f"[INFO] Stitch successful in {elapsed:2f}s")
         return stitched_image
     else:
-        raise Exception("[Console] Stitch failed")
+        raise Exception("[INFO] Stitch failed")
 
 def get_threshold_image(gray_image):
     """
@@ -226,6 +229,7 @@ def expand_from_crop_image(image, crop_location):
         Tuple containing the expanded location and the expanded image (numpy.ndarray).
     """
     print("[Console] Salvaging usable cropped portions")
+    since = time.time()
     height, width = get_image_2D_dim(image)
     h_lower, h_upper, w_left, w_right = crop_location
     mask_img = get_mask_image(image)
@@ -250,10 +254,11 @@ def expand_from_crop_image(image, crop_location):
             h_upper = h-5
             break
     if crop_location is not (h_lower, h_upper, w_left, w_right):
-        print("[Console] Salvaging usable image portion success")
+        elapsed = time.time() - since
+        print(f"[INFO] Salvaging usable image portion success in {elapsed:2f}s")
         return (h_lower, h_upper, w_left, w_right), image[h_lower:h_upper, w_left:w_right]
     else:
-        print("[Console] Salvage failed")
+        print("[INFO] Salvage failed")
         return (None, None)
 
 def remove_black_outline(image):
@@ -267,6 +272,7 @@ def remove_black_outline(image):
         Tuple containing the crop location and the cropped image (numpy.ndarray).
     """
     print("[Console] Cropping Image")
+    since = time.time()
     mask = get_mask_image(image)
     # Cropping image
     is_cropped = False
@@ -277,20 +283,24 @@ def remove_black_outline(image):
             print(f"[Console] Crop image with factor of {crop_factor}")
             is_cropped = True
             break
+    elapsed = time.time() - since
     # Showing result
     if is_cropped:
-        print("[Console] Crop successful")
+        print(f"[INFO] Crop successful in {elapsed:2f}s")
         return crop_image(image, crop_factor)
     else:
-        print("[Console] Image is not suitable to be cropped")
+        print("[INFO] Image is not suitable to be cropped")
         return None
 
 # Main
+main_since = time.time()
 images = get_images("./images/real/*.jpg")
 stitched_image = get_stitch_image(images)
 crop_location, cropped_image = remove_black_outline(stitched_image)
 expand_location, expanded_img = expand_from_crop_image(stitched_image, crop_location)
+main_elapsed = time.time() - main_since
 # Output
+print(f'[INFO] Done in {main_elapsed:2f}s')
 write_image("./output/stitched_img.jpg", stitched_image)
 show_image("Stitch", stitched_image)
 if cropped_image is not None:
