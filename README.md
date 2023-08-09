@@ -1,4 +1,4 @@
-# Pano Stitcher
+# Panorama Stitcher
 
 ## Introduction
 
@@ -11,10 +11,10 @@ The Pano Stitcher script is a Python-based utility that enables the seamless sti
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
-- [Usage](#usage)
+- [API Usage](#api-usage)
+- [Script Usage](#script-usage)
 - [Options](#options)
 - [Examples](#examples)
-- [API Usage](#api-usage)
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
@@ -51,7 +51,23 @@ pip install opencv-python numpy argparse
 pip install fastapi uvicorn pillow
 ```
 
-## Usage
+## API Usage
+
+1. Navigate to the API directory.
+
+2. Launch the FastAPI app by executing the following command:
+
+```bash
+uvicorn pano_stitcher_api:app --host 0.0.0.0 --port 8000
+```
+
+3. Access the FastAPI documentation by navigating to `http://localhost:8000` in your web browser.
+
+4. Utilize the `/stitch_image` endpoint to upload images for stitching and processing. The script will return the stitched and processed image.
+
+5. You can share the API with someone else on the same network using `http://your-ipv4:8000` with your own IPv4
+
+## Script Usage
 
 1. Clone or download this repository to your local machine.
 2. Organize your input images in the same folder.
@@ -89,20 +105,6 @@ python pano_stitcher.py -i './input_images' -o './output_images'
 ```bash
 python pano_stitcher.py -i './input_images' -o './output_images' --no-crop
 ```
-
-## API Usage
-
-1. Navigate to the API directory.
-
-2. Launch the FastAPI app by executing the following command:
-
-```bash
-uvicorn pano_stitcher_api:app --host 0.0.0.0 --port 8000
-```
-
-3. Access the FastAPI documentation by navigating to `http://localhost:8000` in your web browser.
-
-4. Utilize the `/stitch_image` endpoint to upload images for stitching and processing. The script will return the stitched and processed image.
 
 ## Contributing
 
