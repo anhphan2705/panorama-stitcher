@@ -1,6 +1,16 @@
 import cv2
 import glob
 import time
+import argparse
+
+class InvalidDirectoryError(Exception):
+    pass
+
+class StitchingFailedError(Exception):
+    pass
+
+class SalvageFailedError(Exception):
+    pass
 
 def show_image(header, image):
     """
@@ -13,6 +23,7 @@ def show_image(header, image):
     print("[Console] Showing image")
     cv2.imshow(header, image)
     cv2.waitKey()
+
     
 def write_image(directory, image):
     """
@@ -36,21 +47,28 @@ def get_images(directory):
         List of loaded images (list of numpy.ndarray).
         
     Raises:
-        Exception: If the directory is invalid or no images are found.
+        InvalidDirectoryError: If the directory is invalid or no images are found.
     """
-    print("[Console] Accessing folder")
-    image_paths = glob.glob(directory)
-    print(image_paths)
-    if len(image_paths) == 0:
-        raise Exception("[INFO] Invalid directory")
-    images = []
-    # Add images to memory
-    print("[Console] Loading Images")
-    for image_path in image_paths:
-        image = cv2.imread(image_path)
-        images.append(image)
-    print(f"[INFO] Loaded {len(images)} image(s)")
-    return images
+    try:
+        print("[Console] Accessing folder")
+        image_paths = glob.glob(directory)
+        print(image_paths)
+        if len(image_paths) == 0:
+            raise InvalidDirectoryError("[ERROR] Invalid directory or no images found.")
+        images = []
+        # Add images to memory
+        print("[Console] Loading Images")
+        for image_path in image_paths:
+            image = cv2.imread(image_path)
+            if image is None:
+                print(f"[ERROR] Unable to load image: {image_path}")
+            else:
+                images.append(image)
+        print(f"[INFO] Loaded {len(images)} image(s)")
+        return images
+    except Exception as e:
+        print(str(e))
+        raise e
 
 def get_gray_image(image):
     """
@@ -129,8 +147,8 @@ def get_mask_image(image):
     gray_image = get_gray_image(image)
     # Threshold + Blur + Threshold = Remove all the random black pixel in the white part of the first threshold
     threshold_image = get_threshold_image(gray_image)
-    threshold_image_b = cv2.GaussianBlur(threshold_image, (5, 5), 0)
-    threshold_image = get_threshold_image(threshold_image_b)
+    threshold_image = cv2.GaussianBlur(threshold_image, (5, 5), 0)
+    threshold_image = get_threshold_image(threshold_image)
     return threshold_image
 
 def crop_image(image, factor):
@@ -292,20 +310,35 @@ def remove_black_outline(image):
         print("[INFO] Image is not suitable to be cropped")
         return None
 
-# Main
-main_since = time.time()
-images = get_images("./images/real/*.jpg")
-stitched_image = get_stitch_image(images)
-crop_location, cropped_image = remove_black_outline(stitched_image)
-expand_location, expanded_img = expand_from_crop_image(stitched_image, crop_location)
-main_elapsed = time.time() - main_since
-# Output
-print(f'[INFO] Done in {main_elapsed:2f}s')
-write_image("./output/stitched_img.jpg", stitched_image)
-show_image("Stitch", stitched_image)
-if cropped_image is not None:
-    write_image("./output/cropped_img.jpg", cropped_image)
-    show_image("Crop", cropped_image)
-if expanded_img is not None:
-    write_image("./output/expanded_img.jpg", expanded_img)
-    show_image("Expand", expanded_img)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='This program will stitch multiple images into one big panorama.')
+    parser.add_argument('-i','--input', type=str, help='(String) Path to a folder that holds a sequence of images.', default='./images/real')
+    parser.add_argument('-o','--output', type=str, help='(String) Path to folder where outputs should be written to', default='./output')
+    parser.add_argument('-c','--crop', type=bool, help='(bool) False to turn of cropping, True otherwise', action=argparse.BooleanOptionalAction, default=True)
+    args = parser.parse_args()
+    
+    INPUT_PATH = args.input
+    OUT_PATH = args.output
+    IS_CROP = args.crop
+    
+    main_since = time.time()
+    images = get_images(INPUT_PATH + "/*")
+    stitched_image = get_stitch_image(images)
+    
+    if IS_CROP:
+        crop_location, cropped_image = remove_black_outline(stitched_image)
+        expand_location, expanded_img = expand_from_crop_image(stitched_image, crop_location)
+        main_elapsed = time.time() - main_since
+        if expanded_img is not None:
+            print(f'[INFO] Done in {main_elapsed:2f}s')
+            write_image(OUT_PATH + "/pano.jpg", expanded_img)
+            show_image("Pano", expanded_img)
+        else:
+            print("Something went wrong")
+    else:   
+        main_elapsed = time.time() - main_since
+        print(f'[INFO] Done in {main_elapsed:2f}s')
+        write_image(OUT_PATH + "/stitched.jpg", stitched_image)
+        show_image("Stitched", stitched_image)
+
+ 
