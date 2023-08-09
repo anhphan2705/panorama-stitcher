@@ -1,9 +1,8 @@
-# Image Stitching Script
-
-The Image Stitching Script is a Python-based utility that enables the seamless stitching of a sequence of images to create a panoramic view. It utilizes the OpenCV library for image processing and provides optional cropping and salvaging functionalities to enhance the final stitched result.
+# Pano Stitcher
 
 ## Table of Contents
 
+- [Introduction](#introduction)
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -14,6 +13,10 @@ The Image Stitching Script is a Python-based utility that enables the seamless s
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgments](#acknowledgments)
+
+## Introduction
+
+The Pano Stitcher script is a Python-based utility that enables the seamless stitching of a sequence of images to create a panoramic view. It utilizes the OpenCV library for image processing and provides optional cropping and salvaging functionalities to enhance the final stitched result. It will work even with unorganized and duplicated images.
 
 ## Features
 
