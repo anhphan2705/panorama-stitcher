@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Pano Stitcher script is a Python-based utility that enables the seamless stitching of a sequence of images to create a panoramic view. It utilizes the OpenCV library for image processing and provides optional cropping and salvaging functionalities to enhance the final stitched result. It will work even with unorganized and duplicated images.
+The Panorama Stitcher script is a Python-based utility that enables the seamless stitching of a sequence of images to create a panoramic view. It utilizes the OpenCV library for image processing and provides optional cropping and salvaging functionalities to enhance the final stitched result. It will work even with unorganized and duplicated sequence of images.
 
 ## Table of Contents
 
@@ -22,8 +22,7 @@ The Pano Stitcher script is a Python-based utility that enables the seamless sti
 ## Features
 
 - Stitch multiple images together to create a panoramic view.
-- Optional cropping to remove black pixel outlines and enhance the visual quality.
-- Salvaging usable cropped portions to optimize the final stitched result.
+- Optional cropping and optimizing to remove black pixel outlines and enhance the visual quality.
 - Command-line interface for easy execution and customization.
 - Utilizes OpenCV for efficient image processing.
 - Include API for ease of use
@@ -31,7 +30,7 @@ The Pano Stitcher script is a Python-based utility that enables the seamless sti
 ## Requirements
 
 - Python 3.x
-- OpenCV (cv2) library
+- OpenCV library
 - Numpy library
 - argparse library
 - FastAPI library
@@ -45,33 +44,38 @@ The Pano Stitcher script is a Python-based utility that enables the seamless sti
 pip install opencv-python numpy argparse
 ```
 
-2. If you are using API, please install these extras libraries using the following command:
+2. If you are using API, please install the required libraries using the following command:
 
 ```bash
-pip install fastapi uvicorn pillow
+pip install opencv-python numpy argparse fastapi uvicorn pillow
 ```
 
 ## API Usage
 
-1. Navigate to the API directory.
+1. Clone or download this repository to your local machine.
 
-2. Launch the FastAPI app by executing the following command:
+2. Navigate to the API directory.
+
+3. Launch the FastAPI app by executing the following command:
 
 ```bash
 uvicorn pano_stitcher_api:app --host 0.0.0.0 --port 8000
 ```
 
-3. Access the FastAPI documentation by navigating to `http://localhost:8000` in your web browser.
+4. Access the FastAPI documentation by navigating to `http://localhost:8000` in your web browser.
 
-4. Utilize the `/stitch_image` endpoint to upload images for stitching and processing. The script will return the stitched and processed image.
+5. Utilize the `/stitch_image` endpoint to upload images for stitching and processing. The script will return the stitched and processed image.
 
-5. You can share the API with someone else on the same network using `http://your-ipv4:8000` with your own IPv4
+6. You can share the API with someone else on the same network using `http://your-ipv4:8000` with your own IPv4
 
 ## Script Usage
 
 1. Clone or download this repository to your local machine.
+
 2. Organize your input images in the same folder.
+
 3. Navigate to the script directory.
+
 4. Run the script with the following command:
 
 ```bash
