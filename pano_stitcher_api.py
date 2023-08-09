@@ -1,10 +1,11 @@
 import cv2
 import numpy as np
-from fastapi import FastAPI, UploadFile, Response
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, UploadFile
+from fastapi.responses import Response, HTMLResponse
 from PIL import Image
 from io import BytesIO
-from pano_stitcher import *
+from pano_stitcher import get_stitch_image, remove_black_outline, expand_from_crop_image
+
 
 app = FastAPI()
 
@@ -66,34 +67,32 @@ async def stitch_app(in_images: list[UploadFile]):
         in_images (List[UploadFile]): List of images to be stitched.
 
     Returns:
-        Response: The stitched image as a response.
+        FileResponse: The stitched and processed image as a response.
 
     Raises:
         Exception: If stitching fails or the image cannot be cropped.
     """
-    images = []
-    for in_image in in_images:
-        byte_image = await in_image.read()
-        arr_image = convert_byte_to_arr(byte_image)
-        images.append(arr_image)
+    try:
+        if not in_images:
+            raise ValueError("No images uploaded.")
 
-    stitched_image = get_stitch_image(images)
-    crop_location, cropped_image = remove_black_outline(stitched_image)
+        images = [convert_byte_to_arr(await img.read()) for img in in_images]
 
-    if cropped_image is not None:
-        expand_location, expanded_img = expand_from_crop_image(
-            stitched_image, crop_location
-        )
-        if expanded_img is not None:
-            byte_stitched_image = convert_arr_to_byte(expanded_img)
-            return Response(byte_stitched_image, media_type="image/jpg")
+        stitched_image = get_stitch_image(images)
+        crop_location, cropped_image = remove_black_outline(stitched_image)
 
-        byte_stitched_image = convert_arr_to_byte(cropped_image)
-        return Response(byte_stitched_image, media_type="image/jpg")
+        if cropped_image is not None:
+            expand_location, expanded_img = expand_from_crop_image(stitched_image, crop_location)
+            final_image = expanded_img if expanded_img is not None else cropped_image
+        else:
+            final_image = stitched_image
 
-    byte_stitched_image = convert_arr_to_byte(stitched_image)
-    return Response(byte_stitched_image, media_type="image/jpg")
-
+        byte_stitched_image = convert_arr_to_byte(final_image)
+        return Response(byte_stitched_image, media_type="image/jpeg")
+    except ValueError as ve:
+        return {"error": str(ve), "message": "Ensure at least one image is uploaded."}
+    except Exception as e:
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
